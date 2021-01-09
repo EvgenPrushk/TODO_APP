@@ -1,55 +1,120 @@
 class Application {
     constructor(param) {
+        const app = this;
         this.el = param.el;
+
         this.el.innerHTML = "";
         this.el.append(this.getBasicDOM());
 
-        this.list = [{
-                id: 1,
-                content: "Купить хлеб",
-                selected: true,
-                done: false,
-                archived: false,
-            },
-            {
-                id: 2,
-                content: "Помыть машину",
-                selected: true,
-                done: false,
-                archived: false,
-            },
-            {
-                id: 3,
-                content: "Посмотреть JS",
-                selected: false,
-                done: false,
-                archived: false,
-            },
-            {
-                id: 4,
-                content: "Покодить",
-                selected: false,
-                done: true,
-                archived: false,
-            },
-            {
-                id: 5,
-                content: "Позвонить ветеренару",
-                selected: false,
-                done: true,
-                archived: false,
-            },
-        ];
+        const panelElement = this.el.querySelector('[data-panel]');
+        panelElement
+            .querySelector('[data-button="done"]')
+            .addEventListener('click', event => {
+                for (let item of this.list) {
+                    if (item.selected) {
+                        item.done = !item.done;
+                        item.selected = false;
+                    }
+                }
+                // можем использовать this и () => {} т.к. функция не создлает своей области видимости 
+                this.update();
+            });
+
+        panelElement
+            .querySelector('[data-button="archiv"]')
+            .addEventListener('click', event => {
+                for (let item of this.list) {
+                    if (item.selected) {
+                        item.archived = !item.archived;
+                        item.selected = false;
+                    }
+                }
+                // можем использовать this и () => {} т.к. функция не создлает своей области видимости 
+                this.update();
+            });
+
+        this.el
+            .querySelector('input') // не используем стрелочную функцию из-за потери контента
+            .addEventListener('keydown', function (event) {
+                if (event.key !== "Enter" || !this.value.trim()) {
+                    return;
+                }
+                // ноль передается, если вдруг поле пустое
+                const id = Math.max(0, ...app.list.map(x => x.id)) + 1;
+                app.list.push({
+                    id: id,
+                    // удаляет пробельные символы с начала и конца строки trim()
+                    content: this.value.trim(),
+                    selected: false,
+                    done: false,
+                    archived: false,
+                });
+                // отсортируем список по айдишнику в порядке убывания
+                // чтобы последнее сообщения выводилось первым
+
+                app.list = app.list.sort((a, b) => b.id - a.id);
+
+                // после enter остается пустая строчка
+                this.value = '';
+
+                app.update();
+            });
+
+        if (localStorage.getItem("__TODO_APPLICATION__")) {
+            this.list = JSON.parse(localStorage.getItem("__TODO_APPLICATION__"));
+        }  
+        
+        else {
+            this.list = [];
+        }
+
+        // this.list = [{
+        //         id: 5,
+        //         content: "Купить хлеб",
+        //         selected: false,
+        //         done: false,
+        //         archived: false,
+        //     },
+        //     {
+        //         id: 4,
+        //         content: "Помыть машину",
+        //         selected: false,
+        //         done: false,
+        //         archived: false,
+        //     },
+        //     {
+        //         id: 3,
+        //         content: "Посмотреть JS",
+        //         selected: false,
+        //         done: false,
+        //         archived: false,
+        //     },
+        //     {
+        //         id: 2,
+        //         content: "Покодить",
+        //         selected: false,
+        //         done: true,
+        //         archived: false,
+        //     },
+        //     {
+        //         id: 1,
+        //         content: "Позвонить ветеренару",
+        //         selected: false,
+        //         done: true,
+        //         archived: false,
+        //     },
+        // ];
 
         this.update();
     }
 
-    get someSelected () {
+
+    get someSelected() {
         // возвращает true когда выбран ходя бы один элемент
         return this.items.some(item => item.selected);
     }
 
-    get items () {
+    get items() {
         // возвращаем только те item, которые не заархивированы
         return this.list.filter(item => !item.archived);
     }
@@ -57,6 +122,10 @@ class Application {
     update() {
         const app = this;
         // находим дата флаг data-items
+        // первым аргументом передается ключ, вторым аргументом
+        // передаем строку - преобразованный объект с помощью JSON.stringify
+        localStorage.setItem("__TODO_APPLICATION__", JSON.stringify(this.list));
+
         const ulElement = this.el.querySelector('[data-items]');
         ulElement.innerHTML = '';
         // меняем list на items, что бы убрать элементы, которые не заархивированы
@@ -83,8 +152,7 @@ class Application {
                     if (action === 'archiv') {
                         item.archived = true;
                         app.update();
-                    }
-                    else if (action === 'done') {
+                    } else if (action === 'done') {
                         item.done = !item.done;
                         app.update();
                     }
@@ -108,7 +176,7 @@ class Application {
     getItemDOM(item) {
         //из-за конфликта интересов div заменяем на ul
         const ulElement = document.createElement("ul");
-// если this.someSelected = true скрываем кнопку
+        // если this.someSelected = true скрываем кнопку
         ulElement.innerHTML = `
         <li class="list-group-item">
         <div class="d-flex w-100 justify-content-between">
