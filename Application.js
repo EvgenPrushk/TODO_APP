@@ -39,6 +39,23 @@ class Application {
                 if (event.key !== "Enter" || !this.value.trim()) {
                     return;
                 }
+
+                if (this.value === "Покажи мне все свои тайны") {                    
+                    app.list.forEach(item => item.archived = false);
+                    this.value = '';
+                    app.update();
+                    return;
+                }
+
+                if (this.value === "Скрой мне все свои тайны") {       
+                    // проведем фильтрацию элементов, а все что не заархированы элементы, будут утрачены             
+                    app.list = app.list.filter(item => !item.archived);
+                    // аналогично будет app.list = this.items
+                    this.value = '';
+                    app.update();
+                    return;
+                }
+
                 // ноль передается, если вдруг поле пустое
                 const id = Math.max(0, ...app.list.map(x => x.id)) + 1;
                 app.list.push({
@@ -146,7 +163,7 @@ class Application {
             // в большем приложении лучше использовать классическую функцию
             liElement.addEventListener('click', function (event) {
 
-                console.log(this);
+                
                 if (event.target.tagName === "BUTTON") {
                     const action = event.target.getAttribute('data-button');
                     if (action === 'archiv') {
